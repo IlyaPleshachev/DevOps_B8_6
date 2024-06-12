@@ -1,0 +1,43 @@
+version: '3'
+
+x-logging: &logging
+ driver: "json-file"
+ options:
+   max-size: "100m"
+   max-file: "1"
+   
+
+services:
+  # Nginx
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    volumes:
+      - ./www:/var/www
+      - ./nginx:/etc/nginx/conf.d
+    logging: *logging
+  
+  #PHP
+  php:
+    build: .
+    networks:
+      - app-network
+    volumes:
+      - ./www:/var/www
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80", "grep works"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *logging
+
+#Network
+networks:
+  app-network:
